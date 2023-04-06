@@ -2,8 +2,8 @@
 #include <WiFi.h>
 #define CHANNEL 1
 
-int dir[4]={18,32,25,21};
-int pwm[4]={19,33,26,3};
+int dir[4]={26,19,22,33};
+int pwm[4]={25,21,23,32};
 int speedd=50;
 int i, j, k;
 
@@ -18,11 +18,12 @@ typedef struct message{
   float w0;
   float w1;
   float w2;
+  float w3;
  float con_mode;
   } message;
   message but;
-bool wheel_dir[3]={true, true, true};
-float vel[3] ={0,0,0};
+int dirs[4]={false, false, false, true};
+float vel[4] ={0,0,0,0};
 // Init ESP Now with fallback
 void InitESPNow() {
   WiFi.disconnect();
@@ -53,11 +54,11 @@ void configDeviceAP() {
 void setup() {
   Serial.begin(115200);
   Serial.println("ESPNow/Basic/Slave Example");
- for (i=0;i<3;i++)
+ for (i=0;i<4;i++)
  {
   pinMode(dir[i],OUTPUT);
  }
-  for (i=0;i<3;i++)
+  for (i=0;i<4;i++)
  {
   pinMode(pwm[i],OUTPUT);
  }
@@ -90,10 +91,12 @@ void OnDataRecv(const uint8_t *mac_addr, const uint8_t *data, int data_len) {
   vel[0] = but.w0;
   vel[1] = but.w1;
   vel[2] = but.w2;
+  vel[3] = but.w3;
   Serial.println(con);
   Serial.println(vel[0]);
   Serial.println(vel[1]);
   Serial.println(vel[2]);
+  Serial.println(vel[3]);
   Serial.println(butoon);
 
 }
@@ -123,21 +126,24 @@ else{
 }
 void forward()
 {
+  
   for(i=0;i<4;i++)
   {
-    digitalWrite(dir[i], HIGH);
+    digitalWrite(dir[i], LOW);
     analogWrite(pwm[i], speedd);
   }
-  
+  digitalWrite(dir[3],HIGH);
   Serial.println("Forward");
 }
 void back()
 {
   for(i=0;i<4;i++)
   {
-    digitalWrite(dir[i], LOW);
+    digitalWrite(dir[i], HIGH);
     analogWrite(pwm[i], speedd);
   }
+    digitalWrite(dir[3],LOW);
+
   Serial.println("Back");
 }
 void left()
@@ -145,7 +151,7 @@ void left()
   digitalWrite(dir[0], HIGH);
   digitalWrite(dir[1], LOW);
   digitalWrite(dir[2], HIGH);
-  digitalWrite(dir[3], LOW);
+  digitalWrite(dir[3], HIGH);
   for(i=0;i<4;i++)
   { 
     analogWrite(pwm[i], speedd);
@@ -158,7 +164,7 @@ void right()
   digitalWrite(dir[0], LOW);
   digitalWrite(dir[1], HIGH);
   digitalWrite(dir[2], LOW);
-  digitalWrite(dir[3], HIGH);
+  digitalWrite(dir[3], LOW);
   for(i=0;i<4;i++)
   { 
     analogWrite(pwm[i], speedd);
@@ -197,20 +203,24 @@ void stops()
 }
 
 void joy(){
-   for(i=0;i<3;i++)
+
+  int directions[4];
+for(i=0;i<4;i++)
   {
+    directions[i] = dirs[i];
     if(vel[i]<0)
     {
       vel[i]*=-1;
-      digitalWrite(dir[i], !wheel_dir[i]);
-      analogWrite(pwm[i], vel[i]);
+      directions[i] = !dirs[i]; 
+        Serial.println(vel[i]);
     }
+  }
 
-    else
-    {
-      digitalWrite(dir[i], wheel_dir[i]);
+  for(i=0; i<4; i++)
+  {
+    digitalWrite(dir[i], directions[i]);
       analogWrite(pwm[i], vel[i]);
-    }
+        Serial.println(vel[i]);
   }
   
 }
