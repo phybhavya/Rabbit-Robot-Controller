@@ -1,3 +1,4 @@
+
 #include <esp_now.h>
 #include <WiFi.h>
 #define CHANNEL 1
@@ -6,7 +7,14 @@ int dir[4] = {26, 19, 22, 33};
 int pwm[4] = {25, 21, 23, 32};
 int speedd = 50;
 int i, j, k;
-/* Initializing the encoder */
+/*
+  initialization of shooting mechanism
+*/
+int pwmm = 28;
+int dirm = 27;
+/*
+  Initializing the encoder
+*/
 //int inputA = 36;
 //int inputB = 39;
 int dire[2] = {5, 2};
@@ -79,10 +87,6 @@ void setup() {
   // This is the mac address of the Slave in AP Mode
   Serial.print("AP MAC: "); Serial.println(WiFi.softAPmacAddress());
   /*Setting up the coniguration of Encoders */
-  pinMode(inputA, INPUT_PULLUP);
-  pinMode(inputB, INPUT_PULLUP);
-  attachInterrupt(digitalPinToInterrupt(inputA), record_data1, RISING);
-  attachInterrupt(digitalPinToInterrupt(inputB), record_data2, RISING);
   pinMode(dire[0], OUTPUT);
   pinMode(dire[1], OUTPUT);
   pinMode(pwme[0], OUTPUT);
@@ -122,53 +126,42 @@ void OnDataRecv(const uint8_t *mac_addr, const uint8_t *data, int data_len) {
 
 void loop() {
   // Chill
-  if (con == 0) {
-    if (butoon == 1) {
+  if (con == 0)
+  {
+    if (butoon == 1)
+    {
       forward();
     }
-    else if (butoon == 2) {
+    else if (butoon == 2)
+    {
       back();
     }
-    else if (butoon == 3) {
+    else if (butoon == 3)
+    {
       left();
     }
-    else if (butoon == 4) {
+    else if (butoon == 4) 
+    {
       right();
     }
-    else if (butoon == 5) {
-      left_rotate();
-    }
-    else if (butoon == 6) {
+    //else if (butoon == 5)
+    //{
+    //      left_rotate();
+    //    }
+    else if (butoon == 6) 
+    {
       right_rotate();
     }
-    else {
+    else 
+    {
       stops();
     }
   }
   else if (con == 1)
   {
-    if (butoon == 1)
-    {
-      // Write the code
-      for (int i = 0; i < 2; i++)
-      {
-        digitalWrite(dire[i], HIGH);
-        digitalWrite(pwme[i], 20);
-        delay(500);
-      }
-
-    }
-    else if (butoon == 2)
-    {
-      // write the code
-      digitalWrite(dire[i], LOW);
-      digitalWrite(pwme[i], 20);
-      delay(500);
-    }
-    else {
-
-      joy();
-    }
+   joy();
+   lead_screw();
+   shooting_mech();
   }
 }
 void forward()
@@ -251,7 +244,7 @@ void stops()
 
 void joy() {
 
-  int directions[4] = {false, false, false, false};
+  int directions[4] ;
   for (i = 0; i < 4; i++)
   {
     directions[i] = dirs[i];
@@ -274,4 +267,54 @@ void joy() {
   Serial.println("-------------------");
   delay(700);
 }
+void lead_screw()
+{
+  if (butoon == 1)
+  {
+    // Write the code
+    for (int i = 0; i < 2; i++)
+    {
+      digitalWrite(dire[i], HIGH);
+      digitalWrite(pwme[i], 10);
+      Serial.println("forward");
+
+    }
+  }
+  else if (butoon == 2)
+  {
+    for (int i = 0; i < 2; i++)
+    {
+      digitalWrite(dire[i], LOW);
+      digitalWrite(pwme[i], 20);
+      Serial.println("backwards");
+    }
+  }
+  else
+    {
+      for (int i = 0; i < 2; i++)
+      {
+        digitalWrite(dire[i], LOW);
+        digitalWrite(pwme[i], 0);
+        Serial.println("stop");
+      }
+    }
+
+  }
+
+void shooting_mech(){
+  if (butoon == 3)
+  {
+    digitalWrite(dirm, HIGH);
+    analogWrite(pwmm, 160);
+  }
+  else if (butoon == 4 )
+  {
+    digitalWrite(dirm, LOW);
+    analogWrite(pwmm, 160);
+  }
+  else 
+  {
+    analogWrite(pwmm,0);
+  }
 }
+
