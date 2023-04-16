@@ -1,7 +1,7 @@
-
+#include <Servo.h>
 #include <esp_now.h>
 #include <WiFi.h>
-#define CHANNEL 1
+#define CHANNEL 2
 /*Motor driver initialization */
 int dir[4] = {26, 19, 22, 33};
 int pwm[4] = {25, 21, 23, 32};
@@ -12,12 +12,15 @@ int i, j, k;
 */
 int pwmm = 28;
 int dirm = 27;
+/* Initializing the servo*/
+static const int servoPin = 18;
+Servo servo;
 /*
   Initializing the encoder
 */
 //int inputA = 36;
 //int inputB = 39;
-int dire[2] = {5, 2};
+int dire[2] = {2, 5};
 int pwme[2] = {4, 15};
 //String encoder_dir="";
 //String enter="0";
@@ -42,6 +45,7 @@ float vel[4] = {0, 0, 0, 0};
 // Init ESP Now with fallback
 void InitESPNow() {
   WiFi.disconnect();
+  Serial.println("Inside ESPnow");
   if (esp_now_init() == ESP_OK) {
     Serial.println("ESPNow Init Success");
   }
@@ -50,8 +54,13 @@ void InitESPNow() {
     // Retry InitESPNow, add a counte and then restart?
     // InitESPNow();
     // or Simply Restart
+    for (int i = 0; i < 4; i++)
+      {
+        digitalWrite(dir[i], LOW);
+        digitalWrite(pwm[i], 0);
     ESP.restart();
   }
+}
 }
 
 // config AP SSID
@@ -64,10 +73,10 @@ void configDeviceAP() {
   }
   else
   {
-    Serial.println("AP Config Success. Broadcasting with AP: " + String(SSID));
+    Serial.println("AP ConfigSuccess. Broadcasting with AP: " + String(SSID));
     Serial.print("AP CHANNEL "); Serial.println(WiFi.channel());
   }
-}
+} 
 
 void setup() {
   Serial.begin(115200);
@@ -83,7 +92,7 @@ void setup() {
   //Set device in AP mode to begin with
   WiFi.mode(WIFI_AP);
   // configure device AP mode
-  configDeviceAP();
+ // configDeviceAP();
   // This is the mac address of the Slave in AP Mode
   Serial.print("AP MAC: "); Serial.println(WiFi.softAPmacAddress());
   /*Setting up the coniguration of Encoders */
@@ -91,6 +100,7 @@ void setup() {
   pinMode(dire[1], OUTPUT);
   pinMode(pwme[0], OUTPUT);
   pinMode(pwme[1], OUTPUT);
+  servo.attach(servoPin);
   // Init ESPNow with a fallback logic
   InitESPNow();
   // Once ESPNow is successfully Init, we will register for recv CB to
@@ -125,7 +135,7 @@ void OnDataRecv(const uint8_t *mac_addr, const uint8_t *data, int data_len) {
 }
 
 void loop() {
-  // Chill
+
   if (con == 0)
   {
     if (butoon == 1)
@@ -144,10 +154,10 @@ void loop() {
     {
       right();
     }
-    //else if (butoon == 5)
-    //{
-    //      left_rotate();
-    //    }
+    else if (butoon == 5)
+    {
+          left_rotate();
+    }
     else if (butoon == 6) 
     {
       right_rotate();
@@ -161,8 +171,13 @@ void loop() {
   {
    joy();
    lead_screw();
+   if(butoon == 7)
+   {
+    servo_RR();
+   }
    shooting_mech();
   }
+
 }
 void forward()
 {
@@ -194,7 +209,7 @@ void left()
   digitalWrite(dir[3], HIGH);
   for (i = 0; i < 4; i++)
   {
-    analogWrite(pwm[i], speedd);
+    analogWrite(pwm[i], 80);
   }
 
   Serial.println("Left");
@@ -222,6 +237,7 @@ void left_rotate()
   {
     analogWrite(pwm[i], 50);
   }
+  Serial.println("left_rotate");
 }
 void right_rotate()
 {
@@ -233,6 +249,7 @@ void right_rotate()
   {
     analogWrite(pwm[i], 50);
   }
+  Serial.println("right_rotate");
 }
 void stops()
 {
@@ -240,6 +257,7 @@ void stops()
   {
     analogWrite(pwm[i], 0);
   }
+  
 }
 
 void joy() {
@@ -265,7 +283,7 @@ void joy() {
     //Serial.println(directions[i]);
   }
   Serial.println("-------------------");
-  delay(700);
+ delay(500);
 }
 void lead_screw()
 {
@@ -275,19 +293,32 @@ void lead_screw()
     for (int i = 0; i < 2; i++)
     {
       digitalWrite(dire[i], HIGH);
-      digitalWrite(pwme[i], 10);
+      digitalWrite(pwme[i], 1);
       Serial.println("forward");
-
-    }
+       }
+   delay(100);       
+    for (int i = 0; i < 2; i++)
+      {
+        digitalWrite(dire[i], LOW);
+        digitalWrite(pwme[i], 0);
+        Serial.println("stop");
+      }
   }
   else if (butoon == 2)
   {
     for (int i = 0; i < 2; i++)
     {
       digitalWrite(dire[i], LOW);
-      digitalWrite(pwme[i], 20);
+      digitalWrite(pwme[i], 1);
       Serial.println("backwards");
     }
+    delay(100);
+   for (int i = 0; i < 2; i++)
+      {
+        digitalWrite(dire[i], LOW);
+        digitalWrite(pwme[i], 0);
+        Serial.println("stop");
+      }
   }
   else
     {
@@ -298,7 +329,7 @@ void lead_screw()
         Serial.println("stop");
       }
     }
-
+  
   }
 
 void shooting_mech(){
@@ -317,4 +348,17 @@ void shooting_mech(){
     analogWrite(pwmm,0);
   }
 }
+void servo_RR()
+{
+      for(int posDegrees = 0; posDegrees <= 90; posDegrees++) {
+        servo.write(posDegrees);
+        Serial.println(posDegrees);
+        delay(20);
+    }
 
+    for(int posDegrees = 90; posDegrees >= 0; posDegrees--) {
+        servo.write(posDegrees);
+        Serial.println(posDegrees);
+        delay(20);
+    }
+}
