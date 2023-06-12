@@ -15,13 +15,17 @@
   /* End */
 
   /* Intializing of pins  */
-uint8_t dir[4] = {0,0,0,0};
-uint8_t pwm[4] = {0,0,0,0};
-uint8_t conveyor  = 18;
-uint8_t servopin  = 16;
-uint8_t shooting_dir[2] = {0,0};
-uint8_t shooting_pwm[2] = {0,0};
-Servo servo;
+uint8_t dir[4] = {26,33,5,2};
+uint8_t pwm[4] = {25,32,4,15};
+uint8_t conveyor  = 0;
+uint8_t servopin  = 18;
+uint8_t shooting_dir[2] = {27,12};
+uint8_t shooting_pwm[2] = {14,13};
+uint8_t leadscrew_dir[2] = {22,19};
+uint8_t leadscrew_pwm[2] = {23,21};
+uint8_t sense = 34;
+uint8_t lim = 39;
+Servo servo1;
   /* End */
   /* Initialising Variables*/
   int16_t vel[4] = {0};
@@ -59,6 +63,18 @@ void setup() {
   //Set Device as a Wi-Fi Station
   WiFi.mode(WIFI_STA);
 /* Initialize all the pins */
+for(i =0;i<4;i++){
+  pinMode(dir[i],OUTPUT);
+  pinMode(pwm[i],OUTPUT);
+}
+servo1.attach(18);
+for(i =0;i<2;i++){
+  pinMode(shooting_dir[i],OUTPUT);
+  pinMode(shooting_pwm[i],OUTPUT);
+  pinMode(leadscrew_dir[i],OUTPUT);
+  pinMode(leadscrew_pwm[i],OUTPUT);
+ }
+ pinMode(lim,INPUT);
 /* End */  
   // Init ESP-NOW
   if (esp_now_init() != ESP_OK) {
@@ -94,22 +110,32 @@ void motor_vel(){
 void function_vel()
 {
   if(functions[0] == 0)
+  {shooting_func(70);}
+  else if(functions[7] == 0)
   {shooting_func(128);}
+  else
+  {shooting_func(0);}
   if(functions[1] > 0)
-  {servo.write(functions[1]);}
+  {servo1.write(functions[1]);
+    Serial.println("Servo is in");}
+  else
+  {servo1.write(65);
+  Serial.println("Servo is OFF");}
   if(functions[2] == 0)
   {leadscrew_up();}
   if(functions[3] == 0)
-  {leadscrew_down();}
-  if(functions[4] == 0)
-  {conveyor_func();}
+  {if(digitalRead(lim) == 0){
+    leadscrew_down();}
+  }
+//  if(functions[4] == 0)
+//  {conveyor_on();}
+//  else 
+//  {conveyor_off();}
   if(functions[5] == 0)
   {}
   if(functions[6] == 0)
   {}
-  if(functions[7] == 0)
-  {shooting_func(255);}
-  
+
 }
 void shooting_func(int16_t x)
 {for(i=0;i<2;i++){
@@ -118,15 +144,59 @@ void shooting_func(int16_t x)
 }
 }
 void leadscrew_up()
-{
-  
+{for(i=0;i<2;i++){
+  analogWrite(leadscrew_pwm[i],100);
+  digitalWrite(leadscrew_dir[i],LOW);
 }
-void leadscrew_down()
-{
-  
+delay(20);
+for(i=0;i<2;i++){
+  analogWrite(leadscrew_pwm[i],0);
+  digitalWrite(leadscrew_dir[i],LOW);
+}
 }
 
-void conveyor_func()
+void leadscrew_down()
+{
+  for(i=0;i<2;i++){
+  analogWrite(leadscrew_pwm[i],100);
+  digitalWrite(leadscrew_dir[i],HIGH);
+}
+delay(20);
+for(i=0;i<2;i++){
+  analogWrite(leadscrew_pwm[i],0);
+  digitalWrite(leadscrew_dir[i],HIGH);
+}
+}
+
+void conveyor_on()
 {
   digitalWrite(conveyor,HIGH);
+}
+void conveyor_off()
+{
+  digitalWrite(conveyor,LOW);
+}
+void leadscrew_up_IR(){
+  while(digitalRead(sense) != 1)
+  {  for(i=0;i<2;i++){
+  analogWrite(leadscrew_pwm[i],50);
+  digitalWrite(leadscrew_dir[i],LOW);
+}
+ }
+ for(i=0;i<2;i++){
+  analogWrite(leadscrew_pwm[i],50);
+  digitalWrite(leadscrew_dir[i],LOW);
+}
+}
+void leadscrew_down_IR(){
+  while(digitalRead(sense) != 1)
+  {  for(i=0;i<2;i++){
+  analogWrite(leadscrew_pwm[i],50);
+  digitalWrite(leadscrew_dir[i],LOW);
+}
+ }
+ for(i=0;i<2;i++){
+  analogWrite(leadscrew_pwm[i],50);
+  digitalWrite(leadscrew_dir[i],LOW);
+}
 }

@@ -17,9 +17,9 @@
 #define min_vel -255
 #define max_vel 255
 #define Rotation_vel 100
-#define servo_angle 90
+
 //Recievers MAC Address
-uint8_t broadcastAddress[] = {0x08, 0xB6, 0x1F, 0x3D, 0x05, 0xE0};
+uint8_t broadcastAddress[] = {0xD4, 0xD4, 0xDA, 0x59, 0xDF, 0x84};
 
 /* Here your structure will be added where you will initialize all the data you want to send*/
 typedef struct message
@@ -57,10 +57,11 @@ message phase;
 int i;
 int x=0,y=0;
 int func_buttons[8] = {16,4,15,19,23,2,18,0};
-uint8_t val[8] = {0};
+uint8_t val[8] = {1};
 int conveyor_f = 0;
-int wheel_angles[4] = {45,135,225,315};
+int wheel_angles[4] = {135,225,315,45};
 int16_t vel[4] ={0,0,0,0};
+int8_t servo_angle =65;
 /*Initialization ends */
 
 esp_now_peer_info_t peerInfo; //Enum of espnow peer's info
@@ -139,26 +140,28 @@ void first_phase()
      // Serial.println(digitalRead(func_buttons[i]));
       //Serial.print("\t");
     }
-    if(val[2] == 0)
+    if(val[1] == 0)
     {
-      val[2] == servo_angle;
+      //Serial.println("Inside the loop");
+      val[1] = servo_angle;
     }
    val[5] = conveyor_check(val[5]);
    int joy_x = analogRead(joystick_x); 
    int joy_y = analogRead(joystick_y); 
    //Serial.println("Joystick coordinates");
 
-   x = map(joy_x,0,4095, -100, 100) - offset_x*(100-abs(x))/100;
+   x = map(joy_x,0,4095, 100, -100) - offset_x*(100-abs(x))/100;
    y = map(joy_y,0,4095, 100, -100) - offset_y*(100-abs(y))/100;
    joystick(x,y);
    if (digitalRead(R1) == 0)
    { right_rotate();}
    else if (digitalRead(L1) == 0)
    {left_rotate();}
-   for(i =0;i<8;i++)
+ //  Serial.println(val[1]);
+ for(i =0;i<8;i++)
    {
     phase.custom_function[i] = val[i];
-    Serial.println(val[i]);
+   Serial.println(phase.custom_function[i]);
    }
     for(i = 0;i<4;i++)
     {
@@ -183,14 +186,14 @@ void second_phase()
       val[i] = digitalRead(func_buttons[i]);
     }
 
-    if(val[2] == 0)
+    if(val[1] == 0)
     {
-      val[2] == servo_angle;
+      val[1] = servo_angle;
     }
    val[5] = conveyor_check(val[5]); 
    int joy_x = analogRead(joystick_x); 
    int joy_y = analogRead(joystick_y); 
-   x = map(joy_x,0,4095, -100, 100) - offset_x*(100-abs(x))/100;
+   x = map(joy_x,0,4095, 100, -100) - offset_x*(100-abs(x))/100;
    y = map(joy_y,0,4095, 100, -100) - offset_y*(100-abs(y))/100;
    joystick(x,y);
    movement();
@@ -267,15 +270,15 @@ void left_rotate()
 {
   vel[0] = 100;
   vel[1] = 100;  
-  vel[2] = 100;
-  vel[3] = 100;
+  vel[2] = -100;
+  vel[3] = -100;
 }
 void right_rotate()
 {
   vel[0] = -90;
   vel[1] = -90;  
-  vel[2] = -90;
-  vel[3] = -90;
+  vel[2] = 90;
+  vel[3] = 90;
  
 }
 
@@ -287,7 +290,7 @@ void movement()
   else if(digitalRead(backward) == 0)
     {joystick(0,-100);}
   else if(digitalRead(left) == 0)
-    {joystick(-100,0);}
-  else if(digitalRead(right) == 0)
     {joystick(100,0);}
+  else if(digitalRead(right) == 0)
+    {joystick(-100,0);}
 }
